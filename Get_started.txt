@@ -1,1 +1,9 @@
+# https://docs.modular.com/mojo/manual/get-started/
 
+The Mojo SDK is currently available for Ubuntu Linux systems, and support for Windows. macOs is coming soon.
+Mojo SDK includes mojo standard library and the Mojo command-line interface(CLI)
+The Mojo CLI can start a REPL programming environment, complie and run Mojo source files, format source file, and more
+
+Mojo extension for Visual Studio Code : https://marketplace.visualstudio.com/items?itemName=modular-mojotools.vscode-mojo
+
+# Install Mojo
