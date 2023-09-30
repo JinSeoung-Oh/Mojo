@@ -1,0 +1,37 @@
+# Before start:
+Set the MODULAR_HOME and PATH environment variables, as described in the output when you ran modular install mojo. (I think, on this time(2023-09-30), mojo only work well in Linux os.. they say it work in windows, but..) 
+Ex.
+echo 'exprot MODULAR_HOME="$HOME/.modular"' >> ~/.bashrc
+echo 'exprot PATH="$MODULAR_HOME/pkg/packages.modular.com_mojo/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Run code in the REPL
+Mojo REPL allows you to write and run mojo code directly in a command promt
+1. To start a REPL session, type mojo in your terminal and press Enter
+2. Then type print("Hello, world!") and press Enter twice (a blank line is required to indicate the end of an expression)
+like : 
+$ mojo
+print("Hello, world!")
+>
+Hello, world!
+
+You can press Enter to start a new line and continue writing code, and when you want Mojo to evaluate the code, press Enter twice
+
+# Build and run Mojo source files
+-Run a Mojo file
+1. crate a file named hello.mojo(or hello.(fire)) and add the following code:
+fn main():
+   print("Hello, world!")
+save the file and return to your terminal
+
+2. Now run it with the mojo command:
+mojo hello.mojo
+
+-BUild an exeutable binary (.exe file)
+1. Create a stand-alone exeutable with the build command:
+mojo build hello.mojo
+It creates the exeutable with the same name as the .mojo file, but you can change that with the -0 option
+
+2. Then run the exeutable
+./hello
+The executable runs on your system like any C or C++ executable
