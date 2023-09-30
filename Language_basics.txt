@@ -1,0 +1,129 @@
+## Mojo language basics
+Mojo has a lot in common with other system languages like Rust and C++
+Yet, Mojo is also designed to become a superset of Python, so a lof of language features and concepts you might know from Python translate nicely to Mojo
+Mojo preserves Python's dynamic features and language syntax, and it even allows you to import and run code from Python packages.
+However, it's importatn to know that Mojo is an entirely new language, not just a new implementation of Python with syntax sugar.
+Mojo takes the Python language to a whole new level, with systems programming features, strong type-checking, memory safety, next-gerneration compiler tech, and more
+Yet, it's still designed to be a simple language that's useful for general-purpose programming.
+
+
+## Language basics
+Mojo is a compiled language and code can be ahead-of-time(AOT) or just-in-time(JIT) compiled
+Mojo programs require a main() function as the entry point
+
+fn main():
+   var x: Int = 1
+   x += 1
+   print(x)
+
+def main() and fn main() work in mojo, but using fn behaves a bit differently
+
+* All code in a Mojo program or module must be encased in a function or strunct. 
+
+
+## syntax and semantics
+Mojo supports (or "will support") all of Python's syntax and semantics. 
+
+-functions
+Mojo functions can be decalred with either fn or def.
+fn decalaration enforces strognly-type and memory-safe behaviors, wile def provides Python-style dynamic behaviors
+
+-variables
+Can decalre variables with var to create a mutable value, or with let to create an immutable value
+
+* mutable value : editable vale (list, dict in python)
+* immutable value : un-editable value (int, float, str, tuple in python)
+
+x variable had an expliciti Int type specification. Decalring the type is not required for variables in fn, but it is desirable sometimes.
+
+fn do_math():
+   let x: Int = 1
+   let y = 2
+   print(x+y)
+
+
+## Function arguments and returns
+Although types aren't required for variables declared in the function body, they are required for arguments and return values for an fn function
+
+fn add(x :Int, y: Int) -> Int:
+   return x+y
+
+
+## Optional arguments and keyword arguments
+YOu can also sepcify argument default values, and pass values with keyword argument names.
+
+fn pow(base: Int, exp: Int = 2) -> Int:
+   return base ** exp
+
+z = pow(3) --> return 9 (3**2)
+z = pow(exp =3, base =2) --> return 8 (2**3)
+
+
+## Argment mutability and ownership
+Mojo supports full value semantics and enforces memory safety with a robust value ownership model(similar to the Rust borrow checker)
+* In terms of argument converntions, this is called "borrowing", and althought it's the defult for fn functions, tou can make it explicit with the borrowd decalaration.
+
+fn add(borrowed x: Int, borrowed y: Int) -> Int:
+   return x + y
+
+* If you want the arguments to be mutable, you need to decalre the argument convention as inout
+
+fn add_inout(inout x: Int, inout y: Int) -> Int:
+   x += 1
+   y += 1
+   return x+y
+
+* Another option is to decalre the argument as owned, which provides the function full ownership of the value(it's mutable and guaranteed unique)
+
+fn set_fire(owned text: String) -> String:
+   text += "fire"
+   return text
+
+fn mojo():
+   let a : String = "mojo"
+   let b : set_fire(a)
+
+In this case, Mojo makes a copy of a and passes it as the text argument. The original a string is still alive and well.
+
+However, if you want to give the function ownership of the value and do not want to make a copy (which can be an expensive operation for some types), then you can add the ^ “transfer” operator when you pass a to the function.
+
+fn set_fire(owned text: String) -> String:
+   text += "fire"
+   return text
+
+fn mojo():
+   let a : String = "mojo"
+   let b = set_fire(a^)
+You’ll now get an error because the transfer operator effectively destroys the a variable, so when the following print() function tries to use a, that variable isn’t initialized anymore
+
+
+## Structures
+You can build high-level abstractions for types (or “objects”) in a struct. A struct in Mojo is similar to a class in Python: they both support methods, fields, operator overloading, decorators for metaprogramming, etc.
+However, Mojo structs are completely static—they are bound at compile-time, so they do not allow dynamic dispatch or any runtime changes to the structure. (Mojo will also support classes in the future.)
+
+struct MyPair:
+    var first: Int
+    var second: Int
+
+    fn __init__(inout self, first: Int, second: Int):
+        self.first = first
+        self.second = second
+    
+    fn dump(self):
+        print(self.first, self.second)
+
+let mine = MyPair(2, 4)
+mine.dump()
+
+
+############ Python integration ####################
+Although Mojo is still a work in progress and is not a full superset of Python yet, we’ve built a mechanism to import Python modules as-is, so you can leverage existing Python code right away. 
+Under the hood, this mechanism uses the CPython interpreter to run Python code, and thus it works seamlessly with all Python modules today.
+
+from python import Python
+
+let np = Python.import_module("numpy")
+
+ar = np.arange(15).reshape(3, 5)
+print(ar)
+print(ar.shape)
