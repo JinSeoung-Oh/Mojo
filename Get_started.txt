@@ -7,3 +7,21 @@ The Mojo CLI can start a REPL programming environment, complie and run Mojo sour
 Mojo extension for Visual Studio Code : https://marketplace.visualstudio.com/items?itemName=modular-mojotools.vscode-mojo
 
 # Install Mojo
+Get the Modular CLI and then install Mojo:
+https://developer.modular.com/signup?redirect=%2Fdownload
+
+check version
+mojo --version
+
+update version
+modular update mojo
+
+If Ubuntu then
+sudo apt update
+sudo apt install modular
+
+# Mojo Playground
+Instead of downloading the Mojo SDK, can also experiment with mojo in hosted jupyter notebook(Mojo Playground)
+https://developer.modular.com/login?redict=http%3A%2F%2Fplayground.modular.com%2Fauth_callback
+
+--> Have to rename the notbook files. If not, when server refresh or update notebook file will be reset
