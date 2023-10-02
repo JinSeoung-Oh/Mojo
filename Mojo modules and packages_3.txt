@@ -1,0 +1,23 @@
+## Argument passing control and memory ownership
+In both Python and Mojo, much of the language revolves around function calls: 
+a lot of the (apparently) built-in behaviors are implemented in the standard library with “dunder” (double-underscore) methods. 
+Inside these magic functions is where a lot of memory ownership is determined through argument passing
+
+1. All values passed into a Python def function use reference semantics. 
+This means the function can modify mutable objects passed into it and those changes are visible outside the function. 
+However, the behavior is sometimes surprising for the uninitiated, 
+because you can change the object that an argument points to and that change is not visible outside the function
+
+2. All values passed into a Mojo def function use value semantics by default. C
+ompared to Python, this is an important difference: 
+A Mojo def function receives a copy of all arguments—it can modify arguments inside the function, 
+but the changes are not visible outside the function.
+
+3. All values passed into a Mojo fn function are immutable references by default. 
+This means the function can read the original object (it is not a copy), but it cannot modify the object at all
+
+This convention for immutable argument passing in a Mojo fn is called “borrowing.” 
+In the following sections, we’ll explain how you can change the argument passing behavior in Mojo, for both def and fn functions.
+
+
+## Why argument conventions are important
