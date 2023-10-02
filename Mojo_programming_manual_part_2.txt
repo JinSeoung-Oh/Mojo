@@ -1,1 +1,114 @@
 ## fn definitions
+def is defined by necessity to be very dynamic, flexible and generally compatible with Python: 
+arguments are mutable, local variables are implicitly declared on first use, and scoping isn’t enforced
+
+Mojo provides an fn declaration which is like a “strict mode” for def
+** Instead of using a new keyword like fn, we could instead add a modifier or decorator like @strict def
+
+fn and def are interchangeable: there is nothing a def can provide that a fn cannot
+The difference is that a fn is more limited and controlled on the inside of its body
+
+Specifically, fns have a number of limitations compared to def functions:
+1. Argument values default to being immutable in the body of the function, instead of mutable
+2. Argument values require a type specification (except for self in a method), 
+   catching accidental omission of type specifications. Similarly, a missing return type specifier is interpreted 
+   as returning None instead of an unknown return type. Note that both can be explicitly declared to return object, 
+   which allows one to opt-in to the behavior of a def if desired.
+3. Implicit declaration of local variables is disabled, so all locals must be declared
+4. Both support raising exceptions, but this must be explicitly declared on a fn with the raises keyword
+
+## __copyinit__, __moveinit__, __takeinit__
+These low-level customization hooks can be useful when doing low level systems programming, 
+e.g. with manual memory management
+
+# __copyinit__
+from memory.unsafe import Pointer
+
+struct HeapArray:
+    var data: Pointer[Int]
+    var size: Int
+
+    fn __init__(inout self, size: Int, val: Int):
+        self.size = size
+        self.data = Pointer[Int].alloc(self.size)
+        for i in range(self.size):
+            self.data.store(i, val)
+     
+    fn __del__(owned self):
+        self.data.free()
+
+    fn dump(self):
+        print_no_newline("[")
+        for i in range(self.size):
+            if i > 0:
+                print_no_newline(", ")
+            print_no_newline(self.data.load(i))
+        print("]")
+
+If you uncomment the line to copy a into b, you’ll see that Mojo doesn’t allow you to make a copy of our array: 
+HeapArray contains an instance of Pointer (which is equivalent to a low-level C pointer), 
+and Mojo doesn’t know what kind of data it points to or how to copy it. 
+More generally, some types (like atomic numbers) cannot be copied or moved
+around because their address provides an identity just like a class instance does
+
+
+struct HeapArray:
+    var data: Pointer[Int]
+    var size: Int
+
+    fn __init__(inout self, size: Int, val: Int):
+        self.size = size
+        self.data = Pointer[Int].alloc(self.size)
+        for i in range(self.size):
+            self.data.store(i, val)
+########################################################
+    fn __copyinit__(inout self, other: Self):
+        self.size = other.size
+        self.data = Pointer[Int].alloc(self.size)
+        for i in range(self.size):
+            self.data.store(i, other.data.load(i))
+########################################################            
+    fn __del__(owned self):
+        self.data.free()
+
+    fn dump(self):
+        print_no_newline("[")
+        for i in range(self.size):
+            if i > 0:
+                print_no_newline(", ")
+            print_no_newline(self.data.load(i))
+        print("]")
+
+With this implementation, our code above works correctly and the b = a copy produces
+a logically distinct instance of the array with its own lifetime and data
+
+# __moveinit__
+This method which allows both Rust-style moves (which transfers a value from one place to another when the source lifetime ends) 
+
+# __takeinit__
+This method for C++-style moves (where the contents of a value is logically transfered out of the source, 
+but its destructor is still run), and allows defining custom move logic
+
+
+## Argument passing control and memory ownership
+In both Python and Mojo, much of the language revolves around function calls: 
+a lot of the (apparently) built-in behaviors are implemented in the standard library with “dunder” 
+(double-underscore) methods
+
+1. All values passed into a Python def function use reference semantics. 
+This means the function can modify mutable objects passed into it and those changes are visible outside the function. 
+However, the behavior is sometimes surprising for the uninitiated, 
+because you can change the object that an argument points to and that change is not visible outside the function
+
+2. All values passed into a Mojo def function use value semantics by default. 
+Compared to Python, this is an important difference: 
+A Mojo def function receives a copy of all arguments—it can modify arguments inside the function, 
+but the changes are not visible outside the function
+
+3. All values passed into a Mojo fn function are immutable references by default. 
+This means the function can read the original object (it is not a copy), but it cannot modify the object at all.
+
+This convention for immutable argument passing in a Mojo fn is called “borrowing.” 
+In the following sections, we’ll explain how you can change the argument passing behavior in Mojo, 
+for both def and fn functions
+
