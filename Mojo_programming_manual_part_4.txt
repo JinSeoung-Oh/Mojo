@@ -1,1 +1,30 @@
+## Control memory ownership for objects passed into Mojo fn functions
+# Immutable arguments (borrowed)
+A borrowed object is an immutable reference to an object that a function receives, instead of receiving a copy of the object.
+
+struct SomethingBig:
+    var id_number: Int
+    var huge: HeapArray
+    fn __init__(inout self, id: Int):
+        self.huge = HeapArray(1000, 0)
+        self.id_number = id
+
+    fn set_id(inout self, number: Int):
+        self.id_number = number
+
+    fn print_id(self):  # Same as: fn print_id(borrowed self):
+        print(self.id_number)
+
+When passing an instance of SomethingBig to a function, 
+it’s necessary to pass a reference because SomethingBig cannot be copied (it has no __copyinit__ method)
+
+You can explicitly define it with the borrowed keyword as shown in the use_something_big() function here:
+
+fn use_something_big(borrowed a: SomethingBig, b: SomethingBig):
+    a.print_id()
+    b.print_id()
+
+let a = SomethingBig(10)
+let b = SomethingBig(20)
+use_something_big(a, b)
 
