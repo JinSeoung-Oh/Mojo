@@ -21,3 +21,13 @@ In the following sections, we’ll explain how you can change the argument passi
 
 
 ## Why argument conventions are important
+In Python, all fundamental values are references to objects—as described above, a Python function can modify the original object. 
+Thus, Python developers are used to thinking about everything as reference semantic
+However, at the CPython or machine level, you can see that the references themselves are actually 
+passed by-copy—Python copies a pointer and adjusts reference counts
+This Python approach provides a comfortable programming model for most people, but it requires all values to be heap-allocated
+
+Mojo compiler uses dataflow analysis and type annotations to provide full control over value copies, 
+aliasing of references, and mutation control. These features are similar in many ways to features in the Rust language, 
+but they work somewhat differently in order to make Mojo easier to learn, 
+and they integrate better into the Python ecosystem without requiring a massive annotation burden.
