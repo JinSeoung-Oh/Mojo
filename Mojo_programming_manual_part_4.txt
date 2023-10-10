@@ -28,3 +28,100 @@ let a = SomethingBig(10)
 let b = SomethingBig(20)
 use_something_big(a, b)
 
+This default applies to all arguments uniformly, including the self argument of methods. 
+This is much more efficient when passing large values or when passing expensive values like a reference-counted pointer
+The default argument convention for fn functions is borrowed, Mojo has simple and logical code that does the right thing by default
+
+
+This borrowed argument convention is similar in some ways to passing an argument by const& in C++,
+which avoids a copy of the value and disables mutability in the callee.
+However, the borrowed convention differs from const& in C++ in two important ways:
+1. You are allowed to have multiple borrows (as the call to use_something_big does above)
+   but you cannot pass something by mutable reference and borrow at the same time. (TODO: Not currently enabled).
+2. Small values like Int, Float, and SIMD are passed directly in machine registers instead of through an extra indirection 
+The major difference between Rust and Mojo is that Mojo does not require a sigil on the caller side to pass by borrow. 
+Also, Mojo is more efficient when passing small values, and Rust defaults to moving values instead of passing them around by borrow
+
+
+## Mutable arguments (inout)
+If you define an fn function and want an argument to be mutable, you must declare the argument as mutable with the inout keyword.
+
+struct MyInt:
+    var value: Int
+    
+    fn __init__(inout self, v: Int):
+        self.value = v
+
+    fn __copyinit__(inout self, other: MyInt):
+        self.value = other.value
+        
+    # self and rhs are both immutable in __add__.
+    fn __add__(self, rhs: MyInt) -> MyInt:
+        return MyInt(self.value + rhs.value)
+        
+    fn __iadd__(inout self, rhs: Int):
+        self = self + rhs
+
+In this, the self argument is mutable in the function and any changes are visible in the caller, so we can perform in-place addition with MyInt:
+var x: MyInt = 42
+x += 1
+print(x.value) # prints 43 as expected
+# However...
+let y = x
+# Uncomment to see the error:
+# y += 1       # ERROR: Cannot mutate 'let' value
+
+If you uncomment the last line above, mutation of the let value fails because it isn’t possible to form a mutable reference to an immutable value
+***************************************************************
+Notice that we don’t call this argument passing “by reference.” 
+Although the inout convention is conceptually the same, we don’t call it by-reference passing because the implementation may actually pass values using pointers
+***************************************************************
+
+
+## Transfer arguments (owned and ^)
+The final argument convention that Mojo supports is the owned argument convention. 
+This convention is used for functions that want to take exclusive ownership over a value, and it is often used with the postfixed ^ operator.
+
+# This is not really a unique pointer, we just model its behavior here
+# to serve the examples below.
+struct UniquePointer:
+    var ptr: Int
+    
+    fn __init__(inout self, ptr: Int):
+        self.ptr = ptr
+    
+    fn __moveinit__(inout self, owned existing: Self):
+        self.ptr = existing.ptr
+        
+    fn __del__(owned self):
+        self.ptr = 0
+
+While the borrow convention makes it easy to work with this unique pointer without ceremony, 
+at some point you might want to transfer ownership to some other function. 
+This is a situation where you want to use the ^ “transfer” operator with your movable type.
+The ^ operator ends the lifetime of a value binding and transfers the value ownership to something else
+
+fn take_ptr(owned p: UniquePointer):
+    print("take_ptr")
+    print(p.ptr)
+
+fn use_ptr(borrowed p: UniquePointer):
+    print("use_ptr")
+    print(p.ptr)
+    
+fn work_with_unique_ptrs():
+    let p = UniquePointer(100)
+    use_ptr(p)    # Pass to borrowing function.
+    take_ptr(p^)  # Pass ownership of the `p` value to another function.
+
+    # Uncomment to see an error:
+    # use_ptr(p) # ERROR: p is no longer valid here!
+
+work_with_unique_ptrs()
+
+Notice that if you uncomment the second call to use_ptr(), 
+you get an error because the p value has been transferred to the take_ptr() function and, thus, the p value is destroyed.
+
+Because it is declared owned, the take_ptr() function knows it has unique access to the value. 
+This is very important for things like unique pointers, and it’s useful when you want to avoid copies
+
